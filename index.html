@@ -355,25 +355,31 @@ function renderGrid() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const filtered = allItems.filter(i => {
     const mc = activeFilter === 'All' || i.category === activeFilter;
-    const mq = !q || i.name.toLowerCase().includes(q) || i.location.toLowerCase().includes(q);
+    const mq = !q || (i.name||'').toLowerCase().includes(q) || (i.location||'').toLowerCase().includes(q);
     return mc && mq;
   });
   document.getElementById('itemCount').textContent = filtered.length + ' item' + (filtered.length !== 1 ? 's' : '');
   const grid = document.getElementById('itemGrid');
   if (!filtered.length) { grid.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><h3>No items found</h3><p>Try a different search or category.</p></div>'; return; }
-  grid.innerHTML = filtered.map(item => `
+  grid.innerHTML = filtered.map(item => {
+    const caption = item.caption || '';
+    const name = item.name || 'Unnamed item';
+    const location = item.location || 'Unknown location';
+    const category = item.category || 'Other';
+    return `
     <div class="card" onclick="openModal('${item.id}')">
-      ${item.image_url ? `<img class="card-img" src="${item.image_url}" alt="${item.name}" loading="lazy"/>` : `<div class="card-img-placeholder">${EMOJIS[item.category]||'📦'}</div>`}
+      ${item.image_url ? `<img class="card-img" src="${item.image_url}" alt="${name}" loading="lazy"/>` : `<div class="card-img-placeholder">${EMOJIS[category]||'📦'}</div>`}
       <div class="card-body">
         <div class="card-meta"><span class="badge ${item.status==='claimed'?'badge-claimed':'badge-found'}">${item.status==='claimed'?'Claimed':'Found'}</span><span class="card-date">${timeAgo(item.created_at)}</span></div>
-        <div class="card-title">${item.name}</div>
-        <div class="card-desc">${item.caption.substring(0,70)}${item.caption.length>70?'…':''}</div>
+        <div class="card-title">${name}</div>
+        <div class="card-desc">${caption.substring(0,70)}${caption.length>70?'…':''}</div>
         <div class="card-footer">
-          <span class="card-location">📍 ${item.location}</span>
+          <span class="card-location">📍 ${location}</span>
           ${item.status!=='claimed'?`<button class="card-action" onclick="event.stopPropagation();openModal('${item.id}')">Is this mine?</button>`:`<span style="font-size:.75rem;color:var(--text3)">✓ Claimed</span>`}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function setFilter(cat, el) {
