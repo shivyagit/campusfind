@@ -4,7 +4,6 @@
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CampusFind — Lost & Found Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--bg:#f4f3f8;--surface:#fff;--surface2:#eeedf5;--border:#dddbe8;--accent:#5b3fd4;--accent-light:#eeebfb;--text:#1a1720;--text2:#6b6580;--text3:#9b92aa;--green:#2d7a4f;--green-bg:#e5f3ec;--amber:#b06a0a;--amber-bg:#fef3e2;--radius:12px;--shadow:0 2px 16px rgba(0,0,0,0.07);}
@@ -292,17 +291,39 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
 <script>
 const SUPABASE_URL = 'https://ziaamyjftggywbarmnaq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppYWFteWpmdGdneXdiYXJtbmFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTY5OTksImV4cCI6MjA5NTc5Mjk5OX0.ytO2NM6vTjrGDffYSBeE18VSL_U9LKwgJPE-h4x7d7U';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let allItems = [], activeFilter = 'All', currentUser = null, selectedFile = null;
+// Lightweight direct API helper — no SDK needed for reads
+const api = {
+  headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+  async get(table, query='') {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: this.headers });
+    return r.json();
+  },
+  async post(table, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:'POST', headers: this.headers, body: JSON.stringify(body) });
+    return r.json();
+  },
+  async patch(table, id, body) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'PATCH', headers: {...this.headers, 'Prefer':'return=minimal'}, body: JSON.stringify(body) });
+    return r.ok;
+  },
+  async del(table, id) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: this.headers });
+    return r.ok;
+  },
+  async upload(path, file) {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/item-photos/${path}`, { method:'POST', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }, body: file });
+    return r.ok ? `${SUPABASE_URL}/storage/v1/object/public/item-photos/${path}` : null;
+  }
+};
 
-// No auth needed
+let allItems = [], activeFilter = 'All', selectedFile = null;
+
+// Load immediately
 loadItems();
 
 
 async function loadItems() {
-  // Show cached data instantly if available
   try {
     const cached = sessionStorage.getItem('campusfind_items');
     if (cached) {
@@ -312,10 +333,9 @@ async function loadItems() {
       document.getElementById('statReturned').textContent = allItems.filter(i => i.status === 'claimed').length;
     }
   } catch(e) {}
-  // Fetch fresh from Supabase in background
-  const { data, error } = await db.from('items').select('*').order('created_at', { ascending: false });
-  if (error) { showToast('Error: ' + error.message); return; }
-  allItems = data || [];
+  const data = await api.get('items', 'order=created_at.desc');
+  if (!Array.isArray(data)) { return; }
+  allItems = data;
   try { sessionStorage.setItem('campusfind_items', JSON.stringify(allItems)); } catch(e) {}
   renderGrid();
   document.getElementById('statActive').textContent = allItems.filter(i => i.status === 'unclaimed').length;
@@ -372,9 +392,8 @@ document.getElementById('itemModal').addEventListener('click', function(e) { if 
 async function claimItem(id) {
   const proof = document.getElementById('claimProof').value.trim();
   if (!proof) { showToast('Please describe a unique feature.'); return; }
-  const { error } = await db.from('claims').insert({ item_id: id, proof, email: 'anonymous' });
-  if (error) { showToast('Error: ' + error.message); return; }
-  await db.from('items').update({ status: 'claimed' }).eq('id', id);
+  await api.post('claims', { item_id: id, proof, email: 'anonymous' });
+  await api.patch('items', id, { status: 'claimed' });
   allItems = allItems.map(i => i.id === id ? { ...i, status: 'claimed' } : i);
   closeModal(); renderGrid();
   document.getElementById('statActive').textContent = allItems.filter(i => i.status === 'unclaimed').length;
@@ -401,33 +420,32 @@ async function submitItem() {
   if (selectedFile) {
     const ext = selectedFile.name.split('.').pop();
     const path = Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
-    const { error: ue } = await db.storage.from('item-photos').upload(path, selectedFile);
-    if (!ue) { const { data } = db.storage.from('item-photos').getPublicUrl(path); image_url = data.publicUrl; }
+    image_url = await api.upload(path, selectedFile);
   }
-  const { error } = await db.from('items').insert({ name, category, location, caption, contact, image_url, status: 'unclaimed' });
+  const result = await api.post('items', { name, category, location, caption, contact, image_url, status: 'unclaimed' });
   btn.textContent = 'Submit Found Item'; btn.disabled = false;
-  if (error) { showToast('Error: ' + error.message); return; }
+  if (!Array.isArray(result) && result?.code) { showToast('Error submitting item.'); return; }
   ['itemName','itemLocation','itemCaption','itemContact'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('itemCategory').value = '';
   document.getElementById('imgPreview').style.display = 'none';
   document.getElementById('uploadZone').style.display = 'block';
   selectedFile = null;
+  sessionStorage.removeItem('campusfind_items');
   await loadItems(); showToast('✓ Item reported! Now live on the portal.'); showSection('browse');
 }
 
 async function submitLost() {
   const name = document.getElementById('lostName').value.trim();
   if (!name) { showToast('Please enter the item name.'); return; }
-  const { error } = await db.from('lost_reports').insert({ name, category: document.getElementById('lostCategory').value, location: document.getElementById('lostLocation').value.trim(), description: document.getElementById('lostDesc').value.trim(), email: '' });
-  if (error) { showToast('Error: ' + error.message); return; }
+  await api.post('lost_reports', { name, category: document.getElementById('lostCategory').value, location: document.getElementById('lostLocation').value.trim(), description: document.getElementById('lostDesc').value.trim(), email: '' });
   ['lostName','lostLocation','lostDesc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('lostCategory').value = '';
   showToast("✓ Lost report submitted! We'll notify you when found."); showSection('browse');
 }
 
 async function loadAdmin() {
-  const { data } = await db.from('items').select('*').order('created_at', { ascending: false });
-  const items = data || [];
+  const items = await api.get('items', 'order=created_at.desc');
+  if (!Array.isArray(items)) return;
   document.getElementById('adminTotal').textContent = items.length;
   document.getElementById('adminUnclaimed').textContent = items.filter(i => i.status === 'unclaimed').length;
   document.getElementById('adminClaimed').textContent = items.filter(i => i.status === 'claimed').length;
@@ -450,8 +468,8 @@ async function loadAdmin() {
       </div>
     </div>`).join('');
 }
-async function adminMark(id, status) { await db.from('items').update({ status }).eq('id', id); loadAdmin(); loadItems(); showToast('✓ Updated.'); }
-async function adminDelete(id) { await db.from('items').delete().eq('id', id); loadAdmin(); loadItems(); showToast('Deleted.'); }
+async function adminMark(id, status) { await api.patch('items', id, { status }); loadAdmin(); loadItems(); showToast('✓ Updated.'); }
+async function adminDelete(id) { await api.del('items', id); loadAdmin(); loadItems(); showToast('Deleted.'); }
 
 function showSection(name) {
   ['browse','upload','lost','admin'].forEach(s => document.getElementById('section-'+s).style.display = s===name?'block':'none');
