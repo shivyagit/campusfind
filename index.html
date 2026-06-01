@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#f5f2eb;--surface:#fff;--surface2:#f0ece3;--border:#e0d9ce;--accent:#d4522a;--accent-light:#faeae4;--text:#1a1714;--text2:#6b6560;--text3:#9b928a;--green:#2d7a4f;--green-bg:#e5f3ec;--amber:#b06a0a;--amber-bg:#fef3e2;--radius:12px;--shadow:0 2px 16px rgba(0,0,0,0.07);}
+:root{--bg:#f4f3f8;--surface:#fff;--surface2:#eeedf5;--border:#dddbe8;--accent:#5b3fd4;--accent-light:#eeebfb;--text:#1a1720;--text2:#6b6580;--text3:#9b92aa;--green:#2d7a4f;--green-bg:#e5f3ec;--amber:#b06a0a;--amber-bg:#fef3e2;--radius:12px;--shadow:0 2px 16px rgba(0,0,0,0.07);}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 #authScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--text);}
 .auth-box{background:var(--surface);border-radius:20px;padding:3rem 2.5rem;width:100%;max-width:420px;text-align:center;}
@@ -43,12 +43,12 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
 .hero{background:var(--text);color:white;border-radius:var(--radius);padding:2.5rem 2rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;overflow:hidden;position:relative;}
 .hero::after{content:'?';position:absolute;right:-20px;top:-30px;font-family:'Syne',sans-serif;font-size:14rem;font-weight:800;color:rgba(255,255,255,0.04);line-height:1;pointer-events:none;}
 .hero h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:.5rem;}
-.hero h1 span{color:#f5a97f;}
+.hero h1 span{color:#c4b5fd;}
 .hero p{color:rgba(255,255,255,0.6);font-size:.95rem;max-width:360px;}
 .hero-actions{display:flex;gap:10px;margin-top:1.25rem;flex-wrap:wrap;}
 .btn{padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;}
 .btn-primary{background:var(--accent);color:white;}
-.btn-primary:hover{background:#be4520;}
+.btn-primary:hover{background:#4a2fc0;}
 .btn-outline-white{background:transparent;color:white;border:1px solid rgba(255,255,255,0.3);}
 .btn-outline-white:hover{background:rgba(255,255,255,0.08);}
 .hero-stats{display:flex;gap:2rem;}
@@ -130,18 +130,17 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
 
 <div id="appScreen">
   <nav>
-    
+    <div class="nav-logo">Campus<span>Find</span><span style="font-size:.7rem;font-weight:600;color:var(--text3);letter-spacing:.08em;margin-left:2px;align-self:flex-end;margin-bottom:2px;">UPES</span></div>
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="showSection('browse')">Browse Items</button>
       <button class="nav-tab" onclick="showSection('upload')">Report Found</button>
       <button class="nav-tab" onclick="showSection('lost')">I Lost Something</button>
       <button class="nav-tab" onclick="showSection('admin')">Admin</button>
     </div>
-    <div style="position:relative;">
-      <div class="nav-user" id="navAvatar" onclick="toggleUserMenu()">?</div>
-      <div class="nav-user-menu" id="userMenu">
-        <div class="nav-user-email" id="userEmailDisplay"></div>
-        <div class="nav-menu-item danger" onclick="signOut()">Sign out</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="text-align:right;">
+       
+        <div style="font-size:.65rem;color:var(--text3);margin-top:3px;font-weight:500;">By Shivya</div>
       </div>
     </div>
   </nav>
@@ -170,10 +169,10 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
           <button class="chip active" onclick="setFilter('All',this)">All</button>
           <button class="chip" onclick="setFilter('Electronics',this)"> Electronics</button>
           <button class="chip" onclick="setFilter('ID/Cards',this)"> ID/Cards</button>
-          <button class="chip" onclick="setFilter('Bags',this)"> Bags</button>
-          <button class="chip" onclick="setFilter('Clothing',this)"> Clothing</button>
-          <button class="chip" onclick="setFilter('Keys',this)"> Keys</button>
-          <button class="chip" onclick="setFilter('Other',this)"> Other</button>
+          <button class="chip" onclick="setFilter('Keys',this)">Keys</button>
+          <button class="chip" onclick="setFilter('Other',this)">Ear/Headphones</button>
+          <button class="chip" onclick="setFilter('Other',this)">Bottle</button>
+          <button class="chip" onclick="setFilter('Other',this)">Other</button>
         </div>
       </div>
       <div class="section-header">
@@ -200,7 +199,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
         <img id="imgPreview" class="img-preview" />
         <div class="form-group">
           <label class="form-label">Item Name *</label>
-          <input type="text" class="form-input" id="itemName" placeholder="e.g. JBL headphones" />
+          <input type="text" class="form-input" id="itemName" placeholder="e.g. Black Leather Wallet" />
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div class="form-group">
@@ -213,12 +212,12 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
           </div>
           <div class="form-group">
             <label class="form-label">Where found? *</label>
-            <input type="text" class="form-input" id="itemLocation" placeholder="e.g. 10th Block" />
+            <input type="text" class="form-input" id="itemLocation" placeholder="e.g. Library, 10th Block" />
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Pickup Instructions *</label>
-          <textarea class="form-textarea" id="itemCaption" placeholder="e.g. Submitted to L&F office "></textarea>
+          <textarea class="form-textarea" id="itemCaption" placeholder="e.g. Submitted to L&F office or With your_name and PhoneNo."></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Your contact (optional)</label>
@@ -251,7 +250,7 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
           </div>
           <div class="form-group">
             <label class="form-label">Last seen location</label>
-            <input type="text" class="form-input" id="lostLocation" placeholder="e.g. Frisco, Food Court "/>
+            <input type="text" class="form-input" id="lostLocation" placeholder="e.g. Frisco, Food Court" />
           </div>
         </div>
         <div class="form-group">
@@ -273,7 +272,10 @@ main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
       </div>
       <div class="grid" id="adminGrid"><div class="loading"><div class="spinner"></div>Loading...</div></div>
     </div>
-  </main>
+  <div style="text-align:center;padding:2rem 1rem;margin-top:2rem;border-top:1px solid var(--border);">
+  <p style="font-size:.8rem;color:var(--text3);">CampusFind UPES &nbsp;·&nbsp; <span style="color:var(--text3);">Made by Shivya</span></p>
+</div>
+</main>
 </div>
 
 <div class="modal-overlay" id="itemModal">
@@ -292,14 +294,12 @@ const SUPABASE_URL = 'https://ziaamyjftggywbarmnaq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppYWFteWpmdGdneXdiYXJtbmFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMTY5OTksImV4cCI6MjA5NTc5Mjk5OX0.ytO2NM6vTjrGDffYSBeE18VSL_U9LKwgJPE-h4x7d7U';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let allItems = [], activeFilter = 'All', currentUser = null, selectedFile = null;
 
-// No login required — load items directly on page open
+// No auth needed
 loadItems();
 
-async function signOut() { await db.auth.signOut(); document.getElementById('userMenu').classList.remove('open'); }
-function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('open'); }
-document.addEventListener('click', e => { if (!e.target.closest('.nav-user') && !e.target.closest('.nav-user-menu')) document.getElementById('userMenu').classList.remove('open'); });
 
 async function loadItems() {
   const { data, error } = await db.from('items').select('*').order('created_at', { ascending: false });
