@@ -302,9 +302,21 @@ loadItems();
 
 
 async function loadItems() {
+  // Show cached data instantly if available
+  try {
+    const cached = sessionStorage.getItem('campusfind_items');
+    if (cached) {
+      allItems = JSON.parse(cached);
+      renderGrid();
+      document.getElementById('statActive').textContent = allItems.filter(i => i.status === 'unclaimed').length;
+      document.getElementById('statReturned').textContent = allItems.filter(i => i.status === 'claimed').length;
+    }
+  } catch(e) {}
+  // Fetch fresh from Supabase in background
   const { data, error } = await db.from('items').select('*').order('created_at', { ascending: false });
   if (error) { showToast('Error: ' + error.message); return; }
   allItems = data || [];
+  try { sessionStorage.setItem('campusfind_items', JSON.stringify(allItems)); } catch(e) {}
   renderGrid();
   document.getElementById('statActive').textContent = allItems.filter(i => i.status === 'unclaimed').length;
   document.getElementById('statReturned').textContent = allItems.filter(i => i.status === 'claimed').length;
